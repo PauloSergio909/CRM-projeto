@@ -1,0 +1,17 @@
+{
+  "name": "@clientebox/shared",
+  "version": "1.0.0",
+  "description": "Tipos e validações compartilhados entre front-end e back-end",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

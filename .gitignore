@@ -1,0 +1,37 @@
+# ─── DEPENDÊNCIAS ─────────────────────────────────────────────
+node_modules/
+
+# ─── VARIÁVEIS DE AMBIENTE ────────────────────────────────────
+.env
+.env.local
+.env.production
+
+# ─── BUILD (arquivos gerados) ─────────────────────────────────
+dist/
+build/
+
+# ─── BANCO DE DADOS ──────────────────────────────────────────
+postgres_data/
+
+# ─── FERRAMENTAS PORTÁTEIS (Node/Postgres locais, não versionar) ──
+.tools/
+
+# ─── CLAUDE CODE (config local, não versionar) ────────────────
+.claude/settings.local.json
+
+# ─── LOGS ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ─── SISTEMA OPERACIONAL ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── IDE ──────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+
+# ─── TESTES ───────────────────────────────────────────────────
+coverage/
