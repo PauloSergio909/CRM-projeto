@@ -10,13 +10,14 @@ datasource db {
 // ─── AUTENTICAÇÃO ────────────────────────────────────────────
 
 model Usuario {
-  id        String   @id @default(uuid())
-  nome      String
-  email     String   @unique
-  senhaHash String   @map("senha_hash")
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                  String   @id @default(uuid())
+  nome                String
+  email               String   @unique
+  senhaHash           String   @map("senha_hash")
+  ativo               Boolean  @default(true)
+  onboardingConcluido Boolean  @default(false) @map("onboarding_concluido")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   refreshTokens RefreshToken[]
   clientes      Cliente[]
@@ -24,6 +25,9 @@ model Usuario {
   oportunidades Oportunidade[]
   categorias    Categoria[]
   lancamentos   Lancamento[]
+  produtos      Produto[]
+  metas         Meta[]
+  logsAuditoria LogAuditoria[]
 
   @@map("usuarios")
 }
@@ -58,10 +62,13 @@ model Cliente {
   email       String?
   telefone    String?
   cpfCnpj     String?  @map("cpf_cnpj")
+  cep         String?
   endereco    String?
   cidade      String?
   estado      String?  @db.VarChar(2)
+  dataNascimento DateTime? @map("data_nascimento")
   status      String   @default("ativo") // ativo | inativo
+  tags        String[] @default([])
   observacoes String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -128,10 +135,31 @@ model Categoria {
 
   usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   lancamentos Lancamento[]
+  produtos    Produto[]
 
   @@unique([usuarioId, nome, tipo])
   @@index([usuarioId])
   @@map("categorias")
+}
+
+model Produto {
+  id          String   @id @default(uuid())
+  usuarioId   String   @map("usuario_id")
+  nome        String
+  preco       Decimal  @db.Decimal(12, 2)
+  categoriaId String?  @map("categoria_id")
+  descricao   String?
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria   Categoria?   @relation(fields: [categoriaId], references: [id])
+  lancamentos Lancamento[]
+
+  @@unique([usuarioId, nome])
+  @@index([usuarioId])
+  @@map("produtos")
 }
 
 model Lancamento {
@@ -139,6 +167,7 @@ model Lancamento {
   usuarioId      String    @map("usuario_id")
   categoriaId    String?   @map("categoria_id")
   clienteId      String?   @map("cliente_id")
+  produtoId      String?   @map("produto_id")
   tipo           String // receita | despesa
   descricao      String
   valor          Decimal   @db.Decimal(12, 2)
@@ -152,13 +181,52 @@ model Lancamento {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  // Lançamento-modelo tem recorrente=true e recorrenciaOrigemId=null; cada
+  // ocorrência gerada automaticamente aponta pro modelo que a originou.
+  recorrenciaOrigemId String?      @map("recorrencia_origem_id")
+  recorrenciaOrigem   Lancamento?  @relation("Recorrencia", fields: [recorrenciaOrigemId], references: [id])
+  geracoesRecorrentes Lancamento[] @relation("Recorrencia")
+
   usuario   Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   categoria Categoria? @relation(fields: [categoriaId], references: [id])
   cliente   Cliente?   @relation(fields: [clienteId], references: [id])
+  produto   Produto?   @relation(fields: [produtoId], references: [id])
 
   @@index([usuarioId])
+  @@index([recorrenciaOrigemId])
   @@index([categoriaId])
+  @@index([produtoId])
   @@index([status])
   @@index([dataVencimento])
   @@map("lancamentos")
+}
+
+model Meta {
+  id        String   @id @default(uuid())
+  usuarioId String   @map("usuario_id")
+  mes       DateTime // dia 1 do mês de referência
+  valorMeta Decimal  @db.Decimal(12, 2) @map("valor_meta")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, mes])
+  @@index([usuarioId])
+  @@map("metas")
+}
+
+model LogAuditoria {
+  id         String   @id @default(uuid())
+  usuarioId  String   @map("usuario_id")
+  acao       String // criar | atualizar | status | mover
+  entidade   String // cliente | lancamento | oportunidade | categoria | produto | meta
+  entidadeId String?  @map("entidade_id")
+  descricao  String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, createdAt])
+  @@map("logs_auditoria")
 }

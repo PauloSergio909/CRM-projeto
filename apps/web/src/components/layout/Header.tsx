@@ -44,7 +44,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           <Menu size={20} className="text-gray-500" />
         </button>
         <div>
-          <h1 className="text-base md:text-lg font-bold text-gray-900 leading-tight">{title}</h1>
+          <h1 className="text-[clamp(0.95rem,2vw,1.125rem)] font-bold text-gray-900 leading-tight">{title}</h1>
           <p className="text-xs text-gray-400 capitalize hidden md:block">{today}</p>
         </div>
       </div>

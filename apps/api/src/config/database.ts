@@ -6,9 +6,9 @@ import { logger } from '../utils/logger';
 // em JSON.stringify por padrão — quebra qualquer soma feita no front (ex.:
 // total por coluna do kanban vira concatenação de string). Os valores aqui
 // cabem com folga na precisão segura de Number, então convertemos direto.
-Prisma.Decimal.prototype.toJSON = function () {
+Prisma.Decimal.prototype.toJSON = function (this: Prisma.Decimal) {
   return this.toNumber();
-};
+} as unknown as () => string;
 
 export const prisma = new PrismaClient({
   log: env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],

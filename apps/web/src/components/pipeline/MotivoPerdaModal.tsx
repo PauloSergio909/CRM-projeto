@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, Field, inputCls } from '../ui/Modal';
+import { Button } from '../ui/Button';
 
 interface MotivoPerdaModalProps {
   open: boolean;
@@ -35,23 +36,19 @@ export function MotivoPerdaModal({ open, onClose, onConfirm }: MotivoPerdaModalP
         </Field>
 
         <div className="flex justify-end gap-2 pt-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => {
               onConfirm(undefined);
               setMotivo('');
             }}
-            className="px-4 py-2 text-sm font-medium text-gray-600 rounded-xl hover:bg-gray-100 transition"
           >
             Pular
-          </button>
-          <button
-            type="button"
-            onClick={confirmar}
-            className="px-4 py-2 text-sm font-medium text-white bg-cb-primary rounded-xl hover:opacity-90 transition"
-          >
+          </Button>
+          <Button type="button" onClick={confirmar}>
             Confirmar
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

@@ -13,11 +13,20 @@ function calcularVariacao(atual: number, anterior: number): number | null {
   return ((atual - anterior) / anterior) * 100;
 }
 
+// Probabilidade de fechamento por etapa do funil — conceito estimado, não existe
+// no domínio hoje. fechado_ganho fica de fora (já é receita realizada) e
+// fechado_perdido também (peso zero).
+const PESO_ETAPA: Record<string, number> = {
+  contato: 0.1,
+  negociacao: 0.35,
+  proposta: 0.6,
+};
+
 export class DashboardService {
-  async resumo(usuarioId: string) {
+  async resumo(usuarioId: string, referencia: Date = new Date()) {
     const hoje = new Date();
-    const inicioAtual = inicioMes(hoje);
-    const inicioProximo = inicioProximoMes(hoje);
+    const inicioAtual = inicioMes(referencia);
+    const inicioProximo = inicioProximoMes(referencia);
     const inicioAnterior = new Date(inicioAtual.getFullYear(), inicioAtual.getMonth() - 1, 1);
     const daquiA7Dias = new Date(hoje.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -110,10 +119,9 @@ export class DashboardService {
     return resultado;
   }
 
-  async despesasPorCategoria(usuarioId: string) {
-    const hoje = new Date();
-    const inicio = inicioMes(hoje);
-    const fim = inicioProximoMes(hoje);
+  async despesasPorCategoria(usuarioId: string, referencia: Date = new Date()) {
+    const inicio = inicioMes(referencia);
+    const fim = inicioProximoMes(referencia);
 
     const grupos = await prisma.lancamento.groupBy({
       by: ['categoriaId'],
@@ -175,5 +183,31 @@ export class DashboardService {
     ];
 
     return atividades.sort((a, b) => (a.data < b.data ? 1 : -1)).slice(0, limite);
+  }
+
+  async previsaoFaturamento(usuarioId: string, meses = 3) {
+    const [recorrentes, oportunidadesAbertas] = await Promise.all([
+      prisma.lancamento.findMany({
+        where: { usuarioId, recorrente: true, recorrenciaOrigemId: null, tipo: 'receita' },
+        select: { valor: true },
+      }),
+      prisma.oportunidade.findMany({
+        where: { usuarioId, etapa: { in: Object.keys(PESO_ETAPA) } },
+        select: { etapa: true, valorEstimado: true },
+      }),
+    ]);
+
+    const receitaRecorrenteMensal = recorrentes.reduce((soma, l) => soma + Number(l.valor), 0);
+    const pipelinePonderado = oportunidadesAbertas.reduce(
+      (soma, o) => soma + Number(o.valorEstimado) * (PESO_ETAPA[o.etapa] ?? 0),
+      0,
+    );
+
+    return {
+      meses,
+      receitaRecorrenteMensal,
+      pipelinePonderado,
+      totalPrevisto: receitaRecorrenteMensal * meses + pipelinePonderado,
+    };
   }
 }

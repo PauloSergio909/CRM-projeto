@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { OnboardingTour } from '../onboarding/OnboardingTour';
 
 export function MainLayout() {
   const location = useLocation();
@@ -16,6 +17,8 @@ export function MainLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-cb-bg">
+      <OnboardingTour />
+
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}

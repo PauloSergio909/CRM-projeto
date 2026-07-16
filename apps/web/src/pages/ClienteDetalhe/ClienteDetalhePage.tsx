@@ -3,8 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Pencil, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
 import { useCliente, useCriarInteracao } from '../../hooks/useApi';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { TagChip } from '../../components/ui/TagChip';
 import { inputCls, selectCls } from '../../components/ui/Modal';
-import { whatsappLink } from '../../utils/whatsapp';
+import { Button } from '../../components/ui/Button';
+import { whatsappLink } from '@clientebox/shared';
+import { formatCurrency } from '../../utils/formatters';
 import { ClienteFormModal } from '../Clientes/ClienteFormModal';
 
 const tiposInteracao = [
@@ -71,9 +74,13 @@ export function ClienteDetalhePage() {
 
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-bold text-gray-900">{cliente.nome}</h1>
             <StatusBadge status={cliente.status} />
+            {cliente.saude && <StatusBadge status={cliente.saude} />}
+            {cliente.tags.map((tag) => (
+              <TagChip key={tag} tag={tag} />
+            ))}
           </div>
         </div>
 
@@ -103,10 +110,20 @@ export function ClienteDetalhePage() {
           <InfoRow label="Telefone" value={cliente.telefone} />
           <InfoRow label="Email" value={cliente.email} />
           <InfoRow label="CPF/CNPJ" value={cliente.cpfCnpj} />
+          <InfoRow
+            label="Nascimento"
+            value={
+              cliente.dataNascimento
+                ? new Date(cliente.dataNascimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+                : null
+            }
+          />
+          <InfoRow label="Ticket médio" value={cliente.ticketMedio !== null ? formatCurrency(cliente.ticketMedio) : null} />
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="text-sm font-semibold text-gray-700 mb-2">Endereço</h3>
+          <InfoRow label="CEP" value={cliente.cep} />
           <InfoRow label="Endereço" value={cliente.endereco} />
           <InfoRow label="Cidade" value={cliente.cidade} />
           <InfoRow label="Estado" value={cliente.estado} />
@@ -150,13 +167,9 @@ export function ClienteDetalhePage() {
             placeholder="Descreva a interação..."
             className={`${inputCls} flex-1 min-w-[200px]`}
           />
-          <button
-            type="submit"
-            disabled={criarInteracao.isPending || !novaInteracao.descricao.trim()}
-            className="px-4 py-2 bg-cb-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
-          >
+          <Button type="submit" disabled={criarInteracao.isPending || !novaInteracao.descricao.trim()}>
             Registrar
-          </button>
+          </Button>
         </form>
 
         {cliente.interacoes.length === 0 ? (

@@ -16,6 +16,10 @@ import { categoriasRoutes } from './modules/categorias/categorias.routes';
 import { lancamentosRoutes } from './modules/lancamentos/lancamentos.routes';
 import { oportunidadesRoutes } from './modules/oportunidades/oportunidades.routes';
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
+import { relatoriosRoutes } from './modules/relatorios/relatorios.routes';
+import { produtosRoutes } from './modules/produtos/produtos.routes';
+import { metasRoutes } from './modules/metas/metas.routes';
+import { auditoriaRoutes } from './modules/auditoria/auditoria.routes';
 
 export async function buildApp() {
   const app = Fastify({
@@ -104,6 +108,10 @@ export async function buildApp() {
   await app.register(lancamentosRoutes, { prefix: '/api/lancamentos' });
   await app.register(oportunidadesRoutes, { prefix: '/api/oportunidades' });
   await app.register(dashboardRoutes, { prefix: '/api/dashboard' });
+  await app.register(relatoriosRoutes, { prefix: '/api/relatorios' });
+  await app.register(produtosRoutes, { prefix: '/api/produtos' });
+  await app.register(metasRoutes, { prefix: '/api/metas' });
+  await app.register(auditoriaRoutes, { prefix: '/api/auditoria' });
 
   return app;
 }

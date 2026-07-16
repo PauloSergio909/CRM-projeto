@@ -27,7 +27,9 @@ const ContasReceberPage = lazy(() =>
   import('./pages/Financeiro/ContasReceberPage').then((m) => ({ default: m.ContasReceberPage })),
 );
 const RelatoriosPage = lazy(() => import('./pages/Relatorios/RelatoriosPage').then((m) => ({ default: m.RelatoriosPage })));
+const AuditoriaPage = lazy(() => import('./pages/Auditoria/AuditoriaPage').then((m) => ({ default: m.AuditoriaPage })));
 const ConfiguracoesPage = lazy(() => import('./pages/Configuracoes/ConfiguracoesPage').then((m) => ({ default: m.ConfiguracoesPage })));
+const DemoEntryPage = lazy(() => import('./pages/Demo/DemoEntryPage').then((m) => ({ default: m.DemoEntryPage })));
 
 function PageLoader() {
   return (
@@ -40,7 +42,9 @@ function PageLoader() {
 function page(Page: ComponentType) {
   return (
     <ErrorBoundary fallback={(err, reset) => <PageErrorFallback error={err} reset={reset} />}>
-      <Page />
+      <div className="animate-fadeInUp">
+        <Page />
+      </div>
     </ErrorBoundary>
   );
 }
@@ -78,6 +82,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} />
           <Route path="/cadastro" element={isAuthenticated ? <Navigate to="/" /> : page(CadastroPage)} />
+          <Route path="/demo" element={page(DemoEntryPage)} />
 
           <Route element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
             <Route path="/" element={page(DashboardPage)} />
@@ -88,6 +93,7 @@ export default function App() {
             <Route path="/financeiro/contas-a-pagar" element={page(ContasPagarPage)} />
             <Route path="/financeiro/contas-a-receber" element={page(ContasReceberPage)} />
             <Route path="/relatorios" element={page(RelatoriosPage)} />
+            <Route path="/auditoria" element={page(AuditoriaPage)} />
             <Route path="/configuracoes" element={page(ConfiguracoesPage)} />
           </Route>
 

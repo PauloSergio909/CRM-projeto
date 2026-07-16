@@ -9,6 +9,7 @@ node_modules/
 # ─── BUILD (arquivos gerados) ─────────────────────────────────
 dist/
 build/
+dev-dist/
 
 # ─── BANCO DE DADOS ──────────────────────────────────────────
 postgres_data/

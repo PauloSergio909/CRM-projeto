@@ -19,6 +19,9 @@ const statusConfig: Record<string, StatusConfig> = {
   venda: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Venda' },
   orcamento: { bg: 'bg-cyan-50', text: 'text-cyan-700', dot: 'bg-cyan-500', label: 'Orçamento' },
   outro: { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400', label: 'Outro' },
+  saudavel: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Saudável' },
+  atencao: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Atenção' },
+  risco: { bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', label: 'Em risco' },
 };
 
 const defaultConfig: StatusConfig = { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400', label: '—' };

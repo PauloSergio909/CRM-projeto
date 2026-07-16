@@ -1,6 +1,7 @@
 import { Settings } from 'lucide-react';
 import { useMe } from '../../hooks/useApi';
 import { CategoriasSection } from './CategoriasSection';
+import { ProdutosSection } from './ProdutosSection';
 
 export function ConfiguracoesPage() {
   const { data: user, isLoading, isError } = useMe();
@@ -44,6 +45,7 @@ export function ConfiguracoesPage() {
       </div>
 
       <CategoriasSection />
+      <ProdutosSection />
     </div>
   );
 }

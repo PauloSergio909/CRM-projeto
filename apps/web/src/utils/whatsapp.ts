@@ -1,5 +1,0 @@
-export function whatsappLink(telefone: string): string {
-  const digits = telefone.replace(/\D/g, '');
-  const withCountryCode = digits.startsWith('55') ? digits : `55${digits}`;
-  return `https://wa.me/${withCountryCode}`;
-}

@@ -1,5 +1,6 @@
-import { useEffect, useRef, ReactNode } from 'react';
+import { useEffect, useRef, useState, ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { Button } from './Button';
 
 const sizeClasses = {
   sm: 'max-w-sm',
@@ -18,6 +19,23 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(open);
+  const [visible, setVisible] = useState(false);
+
+  // Mantém o modal montado durante a animação de saída (~200ms) em vez de
+  // sumir instantaneamente — troca de classes acontece um frame depois pra
+  // o navegador ter um estado inicial pra transicionar a partir dele.
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      const raf = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(raf);
+    }
+
+    setVisible(false);
+    const timer = setTimeout(() => setMounted(false), 200);
+    return () => clearTimeout(timer);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -39,19 +57,28 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      />
 
-      <div className={`relative bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
+      <div
+        className={`
+          relative bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col
+          transition-all duration-200 ease-out
+          ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+        `}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-bold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Fechar"
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
           >
             <X size={18} />
           </button>
@@ -66,7 +93,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
 }
 
 export const inputCls =
-  'w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-cb-primary/30 focus:border-cb-primary placeholder:text-gray-400';
+  'w-full px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-cb-primary/30 focus:border-cb-primary placeholder:text-gray-400';
 
 export const selectCls = `${inputCls} cursor-pointer`;
 
@@ -99,20 +126,12 @@ interface ModalFooterProps {
 export function ModalFooter({ onCancel, confirmLabel = 'Salvar', loading, disabled }: ModalFooterProps) {
   return (
     <div className="flex justify-end gap-2 pt-2">
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-4 py-2 text-sm font-medium text-gray-600 rounded-xl hover:bg-gray-100 transition"
-      >
+      <Button type="button" variant="ghost" onClick={onCancel}>
         Cancelar
-      </button>
-      <button
-        type="submit"
-        disabled={loading || disabled}
-        className="px-4 py-2 text-sm font-medium text-white bg-cb-primary rounded-xl hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      </Button>
+      <Button type="submit" loading={loading} disabled={disabled}>
         {loading ? 'Salvando...' : confirmLabel}
-      </button>
+      </Button>
     </div>
   );
 }

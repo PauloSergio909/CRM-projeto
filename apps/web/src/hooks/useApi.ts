@@ -21,7 +21,27 @@ export function useMe() {
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       const { data } = await api.get('/auth/me');
-      return data.data as { id: string; nome: string; email: string; ativo: boolean; createdAt: string };
+      return data.data as {
+        id: string;
+        nome: string;
+        email: string;
+        ativo: boolean;
+        onboardingConcluido: boolean;
+        createdAt: string;
+      };
+    },
+  });
+}
+
+export function useConcluirOnboarding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch('/auth/onboarding');
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
   });
 }
@@ -34,11 +54,16 @@ export interface Cliente {
   email: string | null;
   telefone: string | null;
   cpfCnpj: string | null;
+  cep: string | null;
   endereco: string | null;
   cidade: string | null;
   estado: string | null;
+  dataNascimento: string | null;
   status: 'ativo' | 'inativo';
+  tags: string[];
   observacoes: string | null;
+  saude: 'saudavel' | 'atencao' | 'risco' | null;
+  ticketMedio: number | null;
   createdAt: string;
   updatedAt: string;
   _count?: { interacoes: number };
@@ -57,16 +82,49 @@ export interface ClienteDetalhe extends Cliente {
   interacoes: Interacao[];
 }
 
-export function useClientes(page: number, search: string, status?: string) {
+export function useClientes(page: number, search: string, status?: string, tag?: string) {
   return useQuery({
-    queryKey: ['clientes', page, search, status],
+    queryKey: ['clientes', page, search, status, tag],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), perPage: '20' });
       if (search) params.set('search', search);
       if (status) params.set('status', status);
+      if (tag) params.set('tag', tag);
       const { data } = await api.get(`/clientes?${params.toString()}`);
       return data as PaginatedResponse<Cliente>;
     },
+  });
+}
+
+export function useClienteTags() {
+  return useQuery({
+    queryKey: ['clientes', 'tags'],
+    queryFn: async () => {
+      const { data } = await api.get('/clientes/tags');
+      return data.data as string[];
+    },
+  });
+}
+
+export interface DuplicataCliente {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  cpfCnpj: string | null;
+}
+
+export function useVerificarDuplicatas(nome: string, telefone: string, cpfCnpj: string) {
+  return useQuery({
+    queryKey: ['clientes', 'verificar-duplicatas', nome, telefone, cpfCnpj],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (nome) params.set('nome', nome);
+      if (telefone) params.set('telefone', telefone);
+      if (cpfCnpj) params.set('cpfCnpj', cpfCnpj);
+      const { data } = await api.get(`/clientes/verificar-duplicatas?${params.toString()}`);
+      return data.data as DuplicataCliente[];
+    },
+    enabled: nome.trim().length >= 3 || telefone.replace(/\D/g, '').length >= 8 || cpfCnpj.replace(/\D/g, '').length >= 11,
   });
 }
 
@@ -124,6 +182,44 @@ export function useAtualizarStatusCliente() {
       queryClient.invalidateQueries({ queryKey: ['cliente', vars.id] });
     },
     onError: (error) => toast.error(apiError(error, 'Erro ao atualizar status')),
+  });
+}
+
+export interface ImportarClientesResultado {
+  criados: number;
+  erros: { linha: number; motivo: string }[];
+}
+
+export function useImportarClientes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (clientes: Record<string, unknown>[]) => {
+      const { data } = await api.post('/clientes/import', { clientes });
+      return data.data as ImportarClientesResultado;
+    },
+    onSuccess: (resultado) => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      if (resultado.criados > 0) toast.success(`${resultado.criados} cliente(s) importado(s)!`);
+      if (resultado.erros.length > 0) toast.error(`${resultado.erros.length} linha(s) com erro na importação`);
+    },
+    onError: (error) => toast.error(apiError(error, 'Erro ao importar clientes')),
+  });
+}
+
+export interface Aniversariante {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  dataNascimento: string;
+}
+
+export function useAniversariantes() {
+  return useQuery({
+    queryKey: ['clientes', 'aniversariantes'],
+    queryFn: async () => {
+      const { data } = await api.get('/clientes/aniversariantes');
+      return data.data as Aniversariante[];
+    },
   });
 }
 
@@ -207,6 +303,74 @@ export function useAtualizarStatusCategoria() {
   });
 }
 
+// ─── Produtos ───────────────────────────────────────────────
+
+export interface Produto {
+  id: string;
+  nome: string;
+  preco: number;
+  categoriaId: string | null;
+  descricao: string | null;
+  ativo: boolean;
+  createdAt: string;
+  updatedAt: string;
+  categoria?: Categoria | null;
+}
+
+export function useProdutos(ativo?: boolean) {
+  return useQuery({
+    queryKey: ['produtos', ativo],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (ativo !== undefined) params.set('ativo', String(ativo));
+      const { data } = await api.get(`/produtos?${params.toString()}`);
+      return data.data as Produto[];
+    },
+  });
+}
+
+export function useCriarProduto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (dados: Record<string, unknown>) => {
+      const { data } = await api.post('/produtos', dados);
+      return data.data as Produto;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['produtos'] });
+      toast.success('Produto criado!');
+    },
+    onError: (error) => toast.error(apiError(error, 'Erro ao criar produto')),
+  });
+}
+
+export function useAtualizarProduto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...dados }: { id: string } & Record<string, unknown>) => {
+      const { data } = await api.put(`/produtos/${id}`, dados);
+      return data.data as Produto;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['produtos'] });
+      toast.success('Produto atualizado!');
+    },
+    onError: (error) => toast.error(apiError(error, 'Erro ao atualizar produto')),
+  });
+}
+
+export function useAtualizarStatusProduto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+      const { data } = await api.patch(`/produtos/${id}/status`, { ativo });
+      return data.data as Produto;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['produtos'] }),
+    onError: (error) => toast.error(apiError(error, 'Erro ao atualizar status')),
+  });
+}
+
 // ─── Lançamentos ────────────────────────────────────────────
 
 export type FormaPagamento =
@@ -223,6 +387,7 @@ export interface Lancamento {
   tipo: 'receita' | 'despesa';
   categoriaId: string | null;
   clienteId: string | null;
+  produtoId: string | null;
   descricao: string;
   valor: number;
   data: string;
@@ -231,11 +396,13 @@ export interface Lancamento {
   status: 'pendente' | 'pago' | 'vencido' | 'cancelado';
   formaPagamento: FormaPagamento | null;
   recorrente: boolean;
+  recorrenciaOrigemId: string | null;
   observacoes: string | null;
   createdAt: string;
   updatedAt: string;
   categoria?: Categoria | null;
   cliente?: { id: string; nome: string } | null;
+  produto?: Produto | null;
 }
 
 export interface LancamentosFiltros {
@@ -420,11 +587,12 @@ export interface AtividadeRecente {
   data: string;
 }
 
-export function useDashboardResumo() {
+export function useDashboardResumo(mes?: string) {
   return useQuery({
-    queryKey: ['dashboard', 'resumo'],
+    queryKey: ['dashboard', 'resumo', mes],
     queryFn: async () => {
-      const { data } = await api.get('/dashboard/resumo');
+      const params = mes ? `?mes=${mes}` : '';
+      const { data } = await api.get(`/dashboard/resumo${params}`);
       return data.data as DashboardResumo;
     },
   });
@@ -440,11 +608,12 @@ export function useFaturamentoMensal(meses = 6) {
   });
 }
 
-export function useDespesasPorCategoria() {
+export function useDespesasPorCategoria(mes?: string) {
   return useQuery({
-    queryKey: ['dashboard', 'despesas-por-categoria'],
+    queryKey: ['dashboard', 'despesas-por-categoria', mes],
     queryFn: async () => {
-      const { data } = await api.get('/dashboard/despesas-por-categoria');
+      const params = mes ? `?mes=${mes}` : '';
+      const { data } = await api.get(`/dashboard/despesas-por-categoria${params}`);
       return data.data as DespesaPorCategoriaItem[];
     },
   });
@@ -456,6 +625,136 @@ export function useAtividadesRecentes(limite = 10) {
     queryFn: async () => {
       const { data } = await api.get(`/dashboard/atividades?limite=${limite}`);
       return data.data as AtividadeRecente[];
+    },
+  });
+}
+
+export interface PrevisaoFaturamento {
+  meses: number;
+  receitaRecorrenteMensal: number;
+  pipelinePonderado: number;
+  totalPrevisto: number;
+}
+
+export function usePrevisaoFaturamento(meses = 3) {
+  return useQuery({
+    queryKey: ['dashboard', 'previsao', meses],
+    queryFn: async () => {
+      const { data } = await api.get(`/dashboard/previsao?meses=${meses}`);
+      return data.data as PrevisaoFaturamento;
+    },
+  });
+}
+
+// ─── Relatórios ─────────────────────────────────────────────
+
+export interface RankingClienteItem {
+  clienteId: string | null;
+  nome: string;
+  telefone: string | null;
+  totalGasto: number;
+  totalCompras: number;
+  ultimaCompra: string | null;
+}
+
+export interface ClienteInativoItem {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  ultimaAtividade: string;
+}
+
+export function useRankingClientes(limite = 10) {
+  return useQuery({
+    queryKey: ['relatorios', 'ranking-clientes', limite],
+    queryFn: async () => {
+      const { data } = await api.get(`/relatorios/ranking-clientes?limite=${limite}`);
+      return data.data as RankingClienteItem[];
+    },
+  });
+}
+
+export interface RankingProdutoItem {
+  produtoId: string | null;
+  nome: string;
+  totalVendido: number;
+  totalFaturado: number;
+}
+
+export function useRankingProdutos(limite = 10) {
+  return useQuery({
+    queryKey: ['relatorios', 'ranking-produtos', limite],
+    queryFn: async () => {
+      const { data } = await api.get(`/relatorios/ranking-produtos?limite=${limite}`);
+      return data.data as RankingProdutoItem[];
+    },
+  });
+}
+
+export function useClientesInativos(dias = 30) {
+  return useQuery({
+    queryKey: ['relatorios', 'clientes-inativos', dias],
+    queryFn: async () => {
+      const { data } = await api.get(`/relatorios/clientes-inativos?dias=${dias}`);
+      return data.data as ClienteInativoItem[];
+    },
+  });
+}
+
+// ─── Metas ──────────────────────────────────────────────────
+
+export interface Meta {
+  id: string;
+  mes: string;
+  valorMeta: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useMeta(mes: string) {
+  return useQuery({
+    queryKey: ['metas', mes],
+    queryFn: async () => {
+      const { data } = await api.get(`/metas?mes=${mes}`);
+      return data.data as Meta | null;
+    },
+  });
+}
+
+export function useDefinirMeta() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ mes, valorMeta }: { mes: string; valorMeta: number }) => {
+      const { data } = await api.put('/metas', { mes, valorMeta });
+      return data.data as Meta;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['metas', vars.mes] });
+      toast.success('Meta salva com sucesso!');
+    },
+    onError: (error) => toast.error(apiError(error, 'Erro ao salvar meta')),
+  });
+}
+
+// ─── Auditoria ──────────────────────────────────────────────
+
+export interface LogAuditoria {
+  id: string;
+  acao: string;
+  entidade: string;
+  entidadeId: string | null;
+  descricao: string;
+  createdAt: string;
+}
+
+export function useAuditoria(page: number, entidade?: string) {
+  return useQuery({
+    queryKey: ['auditoria', page, entidade],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), perPage: '20' });
+      if (entidade) params.set('entidade', entidade);
+      const { data } = await api.get(`/auditoria?${params.toString()}`);
+      return data as PaginatedResponse<LogAuditoria>;
     },
   });
 }

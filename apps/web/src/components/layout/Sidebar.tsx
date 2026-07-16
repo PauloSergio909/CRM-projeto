@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Kanban, Wallet, BarChart3, Settings, Boxes, X } from 'lucide-react';
+import { Home, Users, Kanban, Wallet, BarChart3, History, Settings, Boxes, X } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 
 const navItemsBefore = [
@@ -16,6 +16,7 @@ const financeiroSubItems = [
 
 const navItemsAfter = [
   { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
+  { to: '/auditoria', icon: History, label: 'Auditoria' },
   { to: '/configuracoes', icon: Settings, label: 'Configurações' },
 ];
 
@@ -46,7 +47,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     <aside
       className={`
         ${isOpen ? 'w-64' : 'w-[72px]'}
-        bg-cb-sidebar flex flex-col transition-all duration-300 flex-shrink-0 h-full
+        bg-cb-sidebar flex flex-col transition-all duration-300 ease-in-out flex-shrink-0 h-full
       `}
     >
       <div className={`${isOpen ? 'px-5' : 'px-3'} py-5 border-b border-white/10 flex items-center gap-3`}>

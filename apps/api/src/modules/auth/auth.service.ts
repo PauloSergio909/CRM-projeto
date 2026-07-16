@@ -29,6 +29,12 @@ export class AuthService {
     return usuario;
   }
 
+  async loginDemo() {
+    const usuario = await prisma.usuario.findUnique({ where: { email: 'demo@clientebox.com.br' } });
+    if (!usuario || !usuario.ativo) return null;
+    return { id: usuario.id, email: usuario.email, nome: usuario.nome };
+  }
+
   async validateLogin(data: LoginInput) {
     const user = await prisma.usuario.findUnique({ where: { email: data.email } });
 
@@ -44,7 +50,31 @@ export class AuthService {
   async findById(id: string) {
     return prisma.usuario.findUnique({
       where: { id },
-      select: { id: true, email: true, nome: true, ativo: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        email: true,
+        nome: true,
+        ativo: true,
+        onboardingConcluido: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async concluirOnboarding(id: string) {
+    return prisma.usuario.update({
+      where: { id },
+      data: { onboardingConcluido: true },
+      select: {
+        id: true,
+        email: true,
+        nome: true,
+        ativo: true,
+        onboardingConcluido: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 

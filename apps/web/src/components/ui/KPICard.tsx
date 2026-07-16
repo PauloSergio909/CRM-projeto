@@ -12,7 +12,7 @@ export function KPICard({ titulo, valor, variacao, icon: Icon }: KPICardProps) {
   const positiva = (variacao ?? 0) >= 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+    <div className="bg-white rounded-2xl border border-gray-200 p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-medium text-gray-500">{titulo}</p>
         {Icon && <Icon size={16} className="text-gray-300" />}

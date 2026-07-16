@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Search, Plus, Wallet, Check } from 'lucide-react';
+import { Search, Plus, Wallet, Check, Repeat, Receipt } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   useLancamentos,
   useCategorias,
@@ -7,10 +8,12 @@ import {
   type LancamentosFiltros,
 } from '../../hooks/useApi';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { api } from '../../services/api';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 import { Pagination } from '../ui/Pagination';
 import { StatusBadge } from '../ui/StatusBadge';
+import { Button } from '../ui/Button';
 import { formatCurrency } from '../../utils/formatters';
 import { LancamentoFormModal } from './LancamentoFormModal';
 
@@ -53,16 +56,27 @@ export function LancamentosList({ tipoFixo, titulo }: LancamentosListProps) {
 
   const resetPage = () => setPage(1);
 
+  const handleGerarRecibo = async (id: string) => {
+    try {
+      const resposta = await api.get(`/lancamentos/${id}/recibo`, { responseType: 'blob' });
+      const url = URL.createObjectURL(resposta.data as Blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `recibo-${id.slice(0, 8)}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erro ao gerar recibo');
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h2 className="text-lg font-bold text-gray-900">{titulo}</h2>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-cb-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition"
-        >
+        <Button data-tour="novo-lancamento" onClick={() => setModalOpen(true)}>
           <Plus size={16} /> Novo Lançamento
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -152,8 +166,15 @@ export function LancamentosList({ tipoFixo, titulo }: LancamentosListProps) {
             ) : (
               <tbody>
                 {lancamentos.map((lancamento) => (
-                  <tr key={lancamento.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-900">{lancamento.descricao}</td>
+                  <tr key={lancamento.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors duration-150">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      <span className="flex items-center gap-1.5">
+                        {(lancamento.recorrente || lancamento.recorrenciaOrigemId) && (
+                          <Repeat size={12} className="text-gray-400 flex-shrink-0" />
+                        )}
+                        {lancamento.descricao}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{lancamento.categoria?.nome ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{lancamento.cliente?.nome ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-600">
@@ -166,15 +187,26 @@ export function LancamentosList({ tipoFixo, titulo }: LancamentosListProps) {
                       <StatusBadge status={lancamento.status} size="sm" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {(lancamento.status === 'pendente' || lancamento.status === 'vencido') && (
-                        <button
-                          onClick={() => atualizarStatus.mutate({ id: lancamento.id, status: 'pago' })}
-                          title="Marcar como pago"
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-cb-success bg-emerald-50 hover:bg-emerald-100 transition"
-                        >
-                          <Check size={12} /> Pago
-                        </button>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5">
+                        {lancamento.clienteId && (
+                          <button
+                            onClick={() => handleGerarRecibo(lancamento.id)}
+                            title="Gerar recibo"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 transition"
+                          >
+                            <Receipt size={12} /> Recibo
+                          </button>
+                        )}
+                        {(lancamento.status === 'pendente' || lancamento.status === 'vencido') && (
+                          <button
+                            onClick={() => atualizarStatus.mutate({ id: lancamento.id, status: 'pago' })}
+                            title="Marcar como pago"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-cb-success bg-emerald-50 hover:bg-emerald-100 transition"
+                          >
+                            <Check size={12} /> Pago
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

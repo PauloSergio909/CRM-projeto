@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+export const dateStringSchema = z
+  .string()
+  .datetime()
+  .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'));
+
 export const loginSchema = z.object({
   email: z
     .string({ required_error: 'Email é obrigatório' })
@@ -39,9 +44,12 @@ export const createClienteSchema = z.object({
   telefone: z.string().trim().min(8, 'Telefone inválido').max(20).optional().or(z.literal('')),
   email: z.string().trim().toLowerCase().email('Email inválido').optional().or(z.literal('')),
   cpfCnpj: z.string().trim().max(20).optional().or(z.literal('')),
+  cep: z.string().trim().max(9).optional().or(z.literal('')),
   endereco: z.string().trim().max(300).optional().or(z.literal('')),
   cidade: z.string().trim().max(100).optional().or(z.literal('')),
   estado: z.string().trim().length(2, 'Use a sigla do estado (2 letras)').optional().or(z.literal('')),
+  dataNascimento: dateStringSchema.optional().or(z.literal('')),
+  tags: z.array(z.string().trim().min(1).max(30)).max(10).optional(),
   observacoes: z.string().trim().optional().or(z.literal('')),
 });
 
@@ -54,6 +62,7 @@ export const updateClienteStatusSchema = z.object({
 export const clientesQuerySchema = paginationSchema.extend({
   status: z.enum(['ativo', 'inativo']).optional(),
   cidade: z.string().optional(),
+  tag: z.string().optional(),
 });
 
 export const createInteracaoSchema = z.object({
@@ -61,8 +70,6 @@ export const createInteracaoSchema = z.object({
   descricao: z.string().trim().min(1, 'Descrição é obrigatória').max(1000),
   data: z.string().datetime().optional(),
 });
-
-const dateStringSchema = z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'));
 
 export const createCategoriaSchema = z.object({
   nome: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -80,10 +87,24 @@ export const updateCategoriaStatusSchema = z.object({
   ativo: z.boolean(),
 });
 
+export const createProdutoSchema = z.object({
+  nome: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(200),
+  preco: z.coerce.number().positive('Preço deve ser maior que zero'),
+  categoriaId: z.string().uuid('Categoria inválida').optional().or(z.literal('')),
+  descricao: z.string().trim().optional().or(z.literal('')),
+});
+
+export const updateProdutoSchema = createProdutoSchema.partial();
+
+export const updateProdutoStatusSchema = z.object({
+  ativo: z.boolean(),
+});
+
 export const createLancamentoSchema = z.object({
   tipo: z.enum(['receita', 'despesa']),
   categoriaId: z.string().uuid('Categoria inválida').optional().or(z.literal('')),
   clienteId: z.string().uuid('Cliente inválido').optional().or(z.literal('')),
+  produtoId: z.string().uuid('Produto inválido').optional().or(z.literal('')),
   descricao: z.string().trim().min(1, 'Descrição é obrigatória').max(300),
   valor: z.coerce.number().positive('Valor deve ser maior que zero'),
   data: dateStringSchema.optional(),
@@ -110,6 +131,11 @@ export const lancamentosQuerySchema = paginationSchema.extend({
   dataFim: dateStringSchema.optional(),
 });
 
+export const upsertMetaSchema = z.object({
+  mes: z.string().regex(/^\d{4}-\d{2}$/, 'Use o formato AAAA-MM'),
+  valorMeta: z.coerce.number().positive('Meta deve ser maior que zero'),
+});
+
 export const createOportunidadeSchema = z.object({
   clienteId: z.string().uuid('Cliente é obrigatório'),
   titulo: z.string().trim().min(3, 'Título deve ter pelo menos 3 caracteres').max(200),
@@ -125,6 +151,10 @@ export const moverOportunidadeSchema = z.object({
   motivoPerda: z.string().trim().optional().or(z.literal('')),
 });
 
+export const auditoriaQuerySchema = paginationSchema.extend({
+  entidade: z.enum(['cliente', 'lancamento', 'oportunidade', 'categoria', 'produto', 'meta']).optional(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type RefreshInput = z.infer<typeof refreshSchema>;
@@ -137,6 +167,9 @@ export type CreateInteracaoInput = z.infer<typeof createInteracaoSchema>;
 export type CreateCategoriaInput = z.infer<typeof createCategoriaSchema>;
 export type UpdateCategoriaInput = z.infer<typeof updateCategoriaSchema>;
 export type UpdateCategoriaStatusInput = z.infer<typeof updateCategoriaStatusSchema>;
+export type CreateProdutoInput = z.infer<typeof createProdutoSchema>;
+export type UpdateProdutoInput = z.infer<typeof updateProdutoSchema>;
+export type UpdateProdutoStatusInput = z.infer<typeof updateProdutoStatusSchema>;
 export type CreateLancamentoInput = z.infer<typeof createLancamentoSchema>;
 export type UpdateLancamentoInput = z.infer<typeof updateLancamentoSchema>;
 export type UpdateLancamentoStatusInput = z.infer<typeof updateLancamentoStatusSchema>;
@@ -144,3 +177,5 @@ export type LancamentosQueryInput = z.infer<typeof lancamentosQuerySchema>;
 export type CreateOportunidadeInput = z.infer<typeof createOportunidadeSchema>;
 export type UpdateOportunidadeInput = z.infer<typeof updateOportunidadeSchema>;
 export type MoverOportunidadeInput = z.infer<typeof moverOportunidadeSchema>;
+export type UpsertMetaInput = z.infer<typeof upsertMetaSchema>;
+export type AuditoriaQueryInput = z.infer<typeof auditoriaQuerySchema>;

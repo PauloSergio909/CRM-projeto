@@ -16,6 +16,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { OportunidadeCard } from '../../components/pipeline/OportunidadeCard';
 import { OportunidadeFormModal } from '../../components/pipeline/OportunidadeFormModal';
 import { MotivoPerdaModal } from '../../components/pipeline/MotivoPerdaModal';
+import { Button } from '../../components/ui/Button';
 
 type Etapa = Oportunidade['etapa'];
 
@@ -148,15 +149,14 @@ export function PipelinePage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-900">Pipeline</h2>
-        <button
+        <Button
           onClick={() => {
             setEditando(null);
             setModalOpen(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-cb-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition"
         >
           <Plus size={16} /> Nova Oportunidade
-        </button>
+        </Button>
       </div>
 
       <DndContext

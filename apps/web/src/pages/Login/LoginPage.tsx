@@ -34,7 +34,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex animate-fadeIn">
       <div className="hidden lg:flex lg:w-1/2 bg-cb-sidebar relative overflow-hidden items-center justify-center">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-cb-primary/10" />
         <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-cb-primary/10" />

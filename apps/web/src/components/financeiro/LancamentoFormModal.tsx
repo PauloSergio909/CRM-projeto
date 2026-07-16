@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createLancamentoSchema } from '@shared/validations';
@@ -8,6 +8,7 @@ import {
   useAtualizarLancamento,
   useCategorias,
   useClientes,
+  useProdutos,
   type Lancamento,
 } from '../../hooks/useApi';
 
@@ -15,6 +16,7 @@ type LancamentoForm = {
   tipo: 'receita' | 'despesa';
   categoriaId?: string;
   clienteId?: string;
+  produtoId?: string;
   descricao: string;
   valor: number;
   data?: string;
@@ -33,6 +35,7 @@ function emptyForm(tipoFixo?: 'receita' | 'despesa'): LancamentoForm {
     tipo: tipoFixo ?? 'despesa',
     categoriaId: '',
     clienteId: '',
+    produtoId: '',
     descricao: '',
     valor: 0,
     data: toDateInputValue(new Date().toISOString()),
@@ -71,6 +74,7 @@ export function LancamentoFormModal({ open, onClose, lancamento, tipoFixo }: Lan
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LancamentoForm>({
     resolver: zodResolver(createLancamentoSchema),
@@ -80,6 +84,16 @@ export function LancamentoFormModal({ open, onClose, lancamento, tipoFixo }: Lan
   const tipoSelecionado = watch('tipo');
   const { data: categorias } = useCategorias(tipoSelecionado);
   const { data: clientesResponse } = useClientes(1, '', 'ativo');
+  const { data: produtos } = useProdutos(true);
+
+  const handleProdutoChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const produto = produtos?.find((p) => p.id === e.target.value);
+    if (produto) {
+      setValue('descricao', produto.nome);
+      setValue('valor', produto.preco);
+      if (produto.categoriaId) setValue('categoriaId', produto.categoriaId);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -89,6 +103,7 @@ export function LancamentoFormModal({ open, onClose, lancamento, tipoFixo }: Lan
             tipo: lancamento.tipo,
             categoriaId: lancamento.categoriaId ?? '',
             clienteId: lancamento.clienteId ?? '',
+            produtoId: lancamento.produtoId ?? '',
             descricao: lancamento.descricao,
             valor: lancamento.valor,
             data: toDateInputValue(lancamento.data),
@@ -123,6 +138,19 @@ export function LancamentoFormModal({ open, onClose, lancamento, tipoFixo }: Lan
                 <input type="radio" value="despesa" {...register('tipo')} /> Despesa
               </label>
             </div>
+          </Field>
+        )}
+
+        {tipoSelecionado === 'receita' && (
+          <Field label="Produto/serviço" error={errors.produtoId?.message}>
+            <select {...register('produtoId', { onChange: handleProdutoChange })} className={selectCls}>
+              <option value="">Digitar manualmente</option>
+              {produtos?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
           </Field>
         )}
 

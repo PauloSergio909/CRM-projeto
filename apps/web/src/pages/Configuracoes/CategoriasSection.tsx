@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Tag } from 'lucide-react';
 import { useCategorias, useAtualizarStatusCategoria, type Categoria } from '../../hooks/useApi';
+import { Button } from '../../components/ui/Button';
 import { CategoriaFormModal } from './CategoriaFormModal';
 
 export function CategoriasSection() {
@@ -26,12 +27,9 @@ export function CategoriasSection() {
           <Tag size={16} className="text-cb-primary" />
           <h3 className="text-sm font-semibold text-gray-700">Categorias financeiras</h3>
         </div>
-        <button
-          onClick={abrirNova}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-cb-primary text-white rounded-lg text-xs font-medium hover:opacity-90 transition"
-        >
+        <Button size="sm" onClick={abrirNova}>
           <Plus size={14} /> Nova categoria
-        </button>
+        </Button>
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Carregando...</p>}

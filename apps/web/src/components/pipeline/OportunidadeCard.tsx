@@ -26,7 +26,7 @@ export function OportunidadeCard({ oportunidade, onClick }: OportunidadeCardProp
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="bg-white rounded-xl border border-gray-200 p-3.5 cursor-grab active:cursor-grabbing hover:shadow-sm transition select-none"
+      className="bg-white rounded-xl border border-gray-200 p-3.5 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow duration-200 select-none"
     >
       <p className="text-sm font-medium text-gray-900 mb-1">{oportunidade.titulo}</p>
       <p className="text-xs text-gray-500 mb-2">{oportunidade.cliente?.nome}</p>

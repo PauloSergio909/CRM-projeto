@@ -57,6 +57,34 @@ export async function authRoutes(app: FastifyInstance) {
   );
 
   app.post(
+    '/demo-login',
+    {
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: '15 minutes',
+          errorResponseBuilder: () => ({ error: 'Muitas tentativas. Tente novamente em 15 minutos.' }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const user = await authService.loginDemo();
+
+      if (!user) {
+        return sendError(reply, 'Conta de demonstração indisponível', 503);
+      }
+
+      const accessToken = makeAccessToken(app, user);
+      const refreshToken = await authService.issueRefreshToken(user.id, {
+        userAgent: request.headers['user-agent'],
+        ip: request.ip,
+      });
+
+      return sendSuccess(reply, { user, accessToken, refreshToken }, 'Bem-vindo ao modo demonstração');
+    },
+  );
+
+  app.post(
     '/refresh',
     {
       config: {
@@ -96,5 +124,11 @@ export async function authRoutes(app: FastifyInstance) {
     }
 
     return sendSuccess(reply, user);
+  });
+
+  app.patch('/onboarding', { preHandler: [authGuard] }, async (request, reply) => {
+    const payload = request.user as { id: string };
+    const user = await authService.concluirOnboarding(payload.id);
+    return sendSuccess(reply, user, 'Onboarding concluído');
   });
 }
